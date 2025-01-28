@@ -1,0 +1,312 @@
+---
+title: "Homework2"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-01-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+
+```
+
+#### Name: Sai Aditya Koduri
+#### UT EID: sk55477
+#### Link to GitHub Repo: https://github.com/saikoduri7
+
+
+## Problem 1: Beauty, or not, in the classroom
+
+### Part A
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+profs <- read.csv("profs.csv")
+
+
+ggplot(profs, aes(x = eval)) + 
+  geom_histogram(fill = "deepskyblue4")  + 
+  labs(
+    title = "Distribution of Course Evaluation Scores",
+    x = "Evaluation Scores",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+
+```
+
+This histogram describes the distribution of the instructor's average teaching evaluation score on a scale of 1 to 5, for courses in the sample. We can observe key takeaways that the graph is mostly skewed to the left with the majority of distribution in the 3-5 rate range. In context, this means that the majority of the course evalution ratings were around 3 - 5 out of 5, with the highest frequency at around 30.
+
+### Part B
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(profs, aes(x = native, y = eval, fill = native)) + 
+  geom_boxplot() + 
+  labs(
+    title = "Course Evaluation Scores by Native English Speaker",
+    x = "Native English Speaker or Not",
+    y = "Course Evaluation Scores"
+  ) +
+  theme_minimal()
+
+```
+
+We can see a correlation that the native speakers have a higher evaluation than the ones who are not. This boxplot is used to measure the interquartile range between the two groups of native speakers and not native speakers. Based on this comparison, we know that the factor of whether being a native speaker or not affects the ratings, in this case, it does.
+
+### Part C
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+ggplot(profs, aes(x = eval, fill = gender)) + 
+  geom_histogram() + 
+  labs(
+    title = "Coures Evaluation Scores by Gender",
+    x = "Evaluation Scores",
+    y = "Frequency"
+  ) +
+  facet_wrap(. ~ gender, nrow = 2) + 
+  theme_minimal()
+
+
+```
+
+In this histogram, we visualize the evaluation scores facet wrapped by gender to see the difference in ratings between scores given to male vs female professors. In this case, there wasn't much of a difference with both distributions being around the same and their medians being pretty close to each other. The peak of course evaluation scores is around 4, and outliers at 2 - 3 range.
+
+
+### Part D
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+ggplot(profs, aes(x = beauty, y = eval)) + 
+  geom_point() + 
+  labs(
+    title = "Professor Physical Attractiveness vs Course Evaluations",
+    x = "Beauty",
+    y = "Evaluation Scores"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+When comparing beauty, or physical attractiveness of the professor, to the evaluation scores, we can see that there is such a weak correlation betwen the two variables, meaning that there is no link or connection between one variable to the other. There seems to be a positive trend, but it is too weak to say if there is one that proves causation.
+
+
+## Problem 2: bike sharing
+
+### Plot A
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+bike <- read.csv("bikeshare.csv")
+
+hourly_avg <- bike %>%
+  group_by(hr) %>%
+  summarize(avg_total = sum(total), .groups = "drop")
+
+bike
+hourly_avg
+
+ggplot(hourly_avg, aes(x = hr, y = avg_total)) + 
+  geom_line(color = "lightblue", size = 1) + 
+  geom_point(color = "maroon", size = 1) + 
+  labs(
+    title = "Average Hourly Bike Rentals",
+    x = "Hour of the Day",
+    y = "Total Bike Rentals"
+  ) +
+  scale_x_continuous(
+    breaks = 0:23,                                    
+    labels = 0:23                                    
+  ) +
+  theme_minimal()
+
+```
+
+This graph represents the total bike rentals based on the hour of the day, using the group_by function to see the total by hour. We can observe that the highest amount of bike rentals are usually during 8 am and 18th hour, or 6 pm, which are reasonable because it represents before and after people go and come back from work respectively.
+
+### Plot B
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+facet_data <- bike %>%
+  group_by(hr, workingday) %>%
+  summarize(avg_total = mean(total), .groups = "drop")
+
+ggplot(facet_data, aes(x = hr, y = avg_total)) + 
+  geom_line(color = "lightblue", size = 1) + 
+  geom_point(color = "maroon", size = 1) + 
+  labs(
+    title = "Average Hourly Bike Rentals",
+    x = "Hour of the Day",
+    y = "Total Bike Rentals"
+  ) +
+  theme_minimal() +
+  facet_wrap(. ~ workingday, labeller = labeller(workingday = c("0" = "Non-Working Day: 0", "1" = "Working Day: 1")))
+
+```
+
+We have the same graph of representing total bike rentals by hour of the day by using the same group_by function. Now, we divide it into two graphs of non-working days and workin days, showing the same type of base trend, but there are clear peaks in the working days rather than in the non working days, where the trend is visible but more flat.
+
+### Plot C
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+new_facet_data <- bike %>%
+  filter(hr == 9) %>%
+  group_by(weathersit, workingday) %>%
+  summarize(avg_ridership = mean(total), .groups = "drop")
+
+
+ggplot(new_facet_data, aes(x = as.factor(weathersit), y = avg_ridership)) + 
+  geom_bar(stat = "identity", fill = "cadetblue4") +
+  theme_minimal() +
+  facet_wrap(. ~ workingday, labeller = labeller(workingday = c("O" = "Non-Working day: 0", "1" = "Working Day: 1"))) +
+  labs(
+    title = "Average Ridership vs Weathersit",
+    x = "Weathersit",
+    y = "Average Ridership"
+  )
+
+```
+
+These two histograms represent the weathersit vs the average ridership, showing that weathersit at 1 and 2 are significantly higher than 3, in other words, when the weather is more suitable for outdoor activity, the average ridership is higher. With the same divison betwen working and non working days, the trend is same between the two, with higher frequencies during the working days rather than the non working days.
+
+
+## Problem 3 - Capital Metro UT Ridership
+
+### Plot 1
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+capmetro_ut <- read.csv("capmetro_UT.csv")
+
+capmetro_ut = 
+  mutate(capmetro_ut,
+         day_of_week = factor(day_of_week, levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+         month = factor(month, levels=c("Sep", "Oct","Nov")))
+
+avg_boardings <- capmetro_ut %>%
+  group_by(hour_of_day, day_of_week, month) %>%
+  summarize(avg_boarding = mean(boarding), .groups = "drop")
+
+ggplot(avg_boardings, aes(x = hour_of_day, y = avg_boarding, color = month, group = month)) +
+  geom_line(size = 1) +
+  facet_wrap(. ~ day_of_week) + 
+  labs(
+    title = "Average Boardings by Hour of Day, Day of Week, and Month",
+    x = "Hour of the Day",
+    y = "Average Boardings",
+    color = "Month"
+  ) +
+  theme_minimal()
+
+
+```
+
+This faceted graph by day of the week shows us the average boardings by hour of the day also by month outlined in different colors. Each day seems to have around the same trend throughout the entire day, even by the different months. However, we do see some changes during Saturday and Sunday where there is barely any boardings compared to the weekdays.
+
+### Plot 2
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(capmetro_ut, aes(x = temperature, y = boarding, color = weekend)) +
+  geom_point() +
+  facet_wrap(. ~ hour_of_day) + 
+  labs(
+    title = "Boarding vs Temperature, faceted by Hour of Day",
+    x = "Temperature (Fahrenheit)",
+    y = "Boardings",
+    color = "Day Type"
+  ) +
+  theme_minimal()
+
+
+```
+As we go through the hours of the day, on weekdays, the boardings rise until 6 pm, when they start to decrease again. For the weekend, there is not much of a change throughout the day. The temperatures rise upto around 90 degrees Fahrenheit to 100 degrees Fahrenheit range. 
+
+
+## Problem 4: Wrangling the Billboard Top 100
+
+### Part A
+
+```{r, results=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+billboard <- read.csv("billboard.csv")
+
+top_songs <- billboard %>%
+  group_by(performer, song) %>%
+  summarise(weeks_on_chart = n(), .groups = "drop") %>%
+  arrange(desc(weeks_on_chart)) %>%
+  head(10) 
+
+print("Top 10 Most Popular Songs since 1958 from Billboard Top 100")
+print(top_songs)
+
+
+
+```
+
+This table shows the top 10 most popular songs since 1958 form the Billboard Top 100, giving information such as performer, song, and weeks on the chart, peaking at 87 weeks. This is found by first grouping by artist and song and adding the column for weeks on the chart. Then we arrange this in descending order to see the top 10 songs.
+
+### Part B
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+music_div <- billboard %>%
+  filter(year > 1958 & year < 2021) %>%
+  group_by(year) %>%
+  summarize(unique_songs = n_distinct(song), .groups = "drop")
+
+
+ggplot(music_div, aes(x = year, y = unique_songs)) +
+  geom_line() +
+  labs(
+    title = "Unique Songs on Billboard Top 100 over time",
+    x = "Years",
+    y = "Unique Song Frequency"
+  ) +
+  theme_minimal()
+
+
+
+```
+
+This line graph shows the distribution of unique songs over the years from 1959 to 2020, exclusive. First it filters our the years 1958 and 2021 as they only contain data for half of the year, then group by year and create a new variable for the total frequency of unique songs. There is a downward trend from the 1960s to the 2000s, but then there is slow increase from there with some downfall until 2020.
+
+### Part C
+
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+ten_week_hit <- billboard %>%
+  group_by(performer, song) %>%
+  summarize(weeks_on_chart = n(), .groups = "drop") %>%
+  filter(weeks_on_chart >= 10)
+
+
+artist_hits <- ten_week_hit %>%
+  group_by(performer) %>%
+  summarize(ten_wk_count = n(), .groups = "drop") %>%
+  filter(ten_wk_count >= 30) %>%
+  arrange(desc(ten_wk_count))
+
+ggplot(artist_hits, aes(x = reorder(performer, ten_wk_count), y = ten_wk_count)) +
+  geom_bar(stat = "identity", fill = "deepskyblue3") +
+  coord_flip() +
+  labs(
+    title = "Artists with over 30 10-week hits on the Billboard Top 100",
+    y = "Number of Ten-Week Hits",
+    x = "Artist"
+  ) +
+  theme_minimal()
+```
+
+This histogram shows the highest number of ten week hits on the Billboard Top 10, ranked in descending order from the highest to lowest. We can see that the highest is at around 52 ten-week hits, which descends to around 30, where it levels off. We have done this by grouping by performer, adding the ten-week count variable and filter by those with 30 or over, and finally arranged in descending order.
