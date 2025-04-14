@@ -1,0 +1,189 @@
+---
+title: "SDS 315 - Homework 8"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-04-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(rvest)
+library(dplyr)
+library(mosaic)
+library(MatchIt)
+library(dplyr)
+library(readr)
+library(broom)
+library(boot)
+library(purrr)
+```
+
+### Name: Sai Aditya Koduri
+### UT EID: sk55477
+### Link to GitHub: https://github.com/saikoduri7/SDS-315
+
+## PROBLEM 1
+
+### A
+
+```{r results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+creat <- read.csv("creatinine.csv")
+
+x <- creat$age
+y <- creat$creatclear
+x_bar <- mean(x)
+y_bar <- mean(y)
+
+b1 <- sum((x - x_bar) * (y - y_bar)) / sum((x - x_bar)^2)
+
+b0 <- y_bar - b1 * x_bar
+
+y_predict <- b0 + (b1 * 55)
+
+
+```
+
+We can expect a creatinine clearance rate of `r y_predict` mL/min at age 55. This was calculated using the linear regression formula y = b0 + b1 * x_bar. This equation helps predict clearance rates based on linear patterns between all of the data points.
+
+### B
+
+The clearance rate changes by approximately `r b1` mL/min per year, indicating a negative linear relationship between age and creatinine clearance. This was found by finding the sum of product of differences between each x variable and the mean of x, same with y, all of that divided by the sum of differences of each point with the mean squared.
+
+### C
+
+```{r results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+expected40 <- b0 + b1 * 40
+expected60 <- b0 + b1 * 60
+
+residual40 <- 135 - expected40
+residual60 <- 112 - expected60
+```
+
+The 40-year old with a rate of 135 has a residual of `r round(residual40, 3)` mL/min, while the 60-year old with a rate of 112 has a residual of `r round(residual60, 3)` mL/min. This means that 40-year old is healthier for their age, as their clearance rate is `r round(residual40, 3)` mL/min higher than the expected vs. just `r round(residual60, 3)` mL/min for the 60-year old. Both of the expected values were found using the linear regression formula, and the difference or residuals, were found by taking the difference in actual and expected clearance rates.
+
+## PROBLEM 2
+
+```{r results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+covid <- read.csv("covid.csv")
+
+growth <- function(df, country_name) {
+  country_data <- subset(df, country == country_name & deaths > 0)
+  
+  x <- country_data$days_since_first_death
+  y <- log(country_data$deaths)
+  
+  x_bar <- mean(x)
+  y_bar <- mean(y)
+  
+  slope <- sum((x - x_bar) * (y - y_bar)) / sum((x - x_bar)^2)
+  intercept <- y_bar - slope * x_bar
+  
+  doubling_time <- log(2) / slope
+  
+  cat("\n",country_name, "\n")
+  cat("Growth rate (r):", round(slope, 3), "\n")
+  cat("Doubling time:", round(doubling_time, 1), "days\n")
+  
+  return(data.frame(country = country_name, r = slope, t_double = doubling_time))
+}
+
+
+```
+
+### 1)
+
+```{r results=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+italy <- covid %>% filter(country == "Italy")
+
+model_italy <- lm(log(deaths) ~ days_since_first_death, data = italy)
+
+growth_italy <- coef(model_italy)[2]
+
+boot_italy = do(10000)*lm(log(deaths) ~ (days_since_first_death), data = resample(italy))
+confint(boot_italy, level = .95)
+growth_rate <- 0.183218
+doubling_time <- 70/(growth_rate*100)
+
+```
+
+Italy. 
+Growth rate (r): `r round(growth_rate, 3)`. 
+Doubling time: `r  round(doubling_time, 1)`. 
+
+### 2)
+
+```{r results=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+spain <- covid %>% filter(country == "Spain")
+
+model_spain <- lm(log(deaths) ~ days_since_first_death, data = spain)
+
+growth_spain <- coef(model_spain)[2]
+
+boot_spain = do(10000)*lm(log(deaths) ~ (days_since_first_death), data = resample(spain))
+confint(boot_spain, level = .95)
+growth_rate <- 0.2762447
+doubling_time <- 70/(growth_rate*100)
+
+```
+
+Spain. 
+Growth rate (r): `r round(growth_rate, 3)`. 
+Doubling time: `r  round(doubling_time, 1)`. 
+
+### 3)
+
+```{r results=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+new_covid <- subset(covid, deaths>0)
+
+ggplot(new_covid, aes(x = days_since_first_death, y = deaths, color = country)) + geom_line() +
+  labs(
+    title = "COVID-19 Daily Reported Deaths",
+    x = "Days Since First Death",
+    y = "Reported Deaths"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Italy" = "blue", "Spain" = "red"))
+
+```
+
+
+## PROBLEM 3
+
+```{r results=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+milk <- read.csv("milk.csv")
+
+milk <- milk %>% mutate(log_price = log(price),log_sales = log(sales))
+
+model_milk <- lm(log_sales ~ log_price, data = milk)
+
+
+elasticity <- coef(model_milk)["log_price"]
+elasticity
+
+boot_elasticity <- do(1000) * coef(lm(log(sales) ~ log(price), data = mosaic::resample(milk)))[[2]]
+colnames(boot_elasticity) <- "elasticity"
+
+elasticity_ci <- confint(boot_elasticity, level = 0.95)
+
+list(
+  price_elasticity = round(elasticity, 3),
+  price_elasticity_ci = elasticity_ci[c("lower", "upper")]
+)
+
+```
+
+To estimate the price elasticity of demand for milk, I transformed both price and sales data using log to linearize the relationship, then fit a linear regression model with log(sales) as the response and log(price) as the predictor. The estimated price elasticity is the slope of the regression. I used bootstrapping by taking 1000 resamples to compute a 95% confidence interval for this estimate.
+
+Estimated elasticity: -1.619
+95% confidence interval: [-1.770, -1.464]
+
